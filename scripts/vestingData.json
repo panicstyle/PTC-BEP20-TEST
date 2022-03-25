@@ -1,9 +1,9 @@
 [
     { 
         "address" : "0x304b3C0f5b2561eE5B03CAD9fA7Da055F9217049", 
-        "amount" : "10", 
-        "vestingCount" : 2, 
-        "firstReleaseDate" : "2022-03-22",
+        "amount" : "10.5", 
+        "vestingCount" : 3, 
+        "firstReleaseDate" : "2022-03-26",
         "vestingInterval" : 90
     },
     { 
@@ -13,5 +13,4 @@
         "firstReleaseDate" : "2022-03-26",
         "vestingInterval" : 10
     }
-
 ]

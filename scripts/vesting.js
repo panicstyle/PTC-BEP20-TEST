@@ -56,30 +56,36 @@ module.exports = async function(callback) {
                 continue;
             }
 
-            // amount 를 vestingCount 를 나누었을 때 나머지 없이 나누어져야 함.
-            var vestingAmount = parseInt(data.amount / data.vestingCount);
-            console.log("amount:", data.amount, "vestingAmount:", vestingAmount, "vestingCount:", data.vestingCount);
-            if ((vestingAmount * data.vestingCount) != data.amount) {
-//                throw new Error('amount is invalid.')
-                console.log("amount is invalid.");
-                fileLog.writeln(util.format("\tError: amount is invalid."));
-                continue;
-            }
+            // amount 를 vestingCount 를 나누고, 나머지는 마지막 값에다 추가한다.
+            const vestingAmount = parseInt(data.amount / data.vestingCount);
+            const remain = data.amount % data.vestingCount;
+            const vestingAmountLast = vestingAmount + remain; 
+            console.log("amount:", data.amount, "vestingCount:", data.vestingCount, 
+            "vestingAmount:", vestingAmount, "vestingAmountLast:", vestingAmountLast);
 
             // vestingAmount 를 WEI 단위로 변환
-            var vestingAmountWei = Web3.utils.toWei(String(vestingAmount), 'ether');
+            const vestingAmountWei = Web3.utils.toWei(String(vestingAmount), 'ether');
+            const vestingAmountLastWei = Web3.utils.toWei(String(vestingAmountLast), 'ether');
             for (var i=0; i < data.vestingCount; i++) {
                 var vestingDate = firstReleaseDate.addDays(i * data.vestingInterval);
                 var vestingTimestamp = vestingDate.getTime()/1000;
-                console.log("vesingDate:", vestingDate, "vestingTimestamp:", vestingTimestamp, "vestingAmountWei:", vestingAmountWei);
+                console.log("\t", i + 1, "/", data.vestingCount);
+                console.log("\t", "vesingDate:", vestingDate, "vestingTimestamp:", vestingTimestamp, "vestingAmountWei:", vestingAmountWei);
 
+                var valueWei = vestingAmountWei;
+                var valueEth = vestingAmount;
+                if (i == (data.vestingCount - 1)) {
+                    valueWei = vestingAmountLastWei;
+                    valueEth = vestingAmountLast;
+                }
                 // transferWithLock
-                console.log("address:", data.address, "vestingAmountWei:", vestingAmountWei, "vestingTimestamp:", vestingTimestamp);
-                const transferTx = await ptc.transferWithLock(data.address, BigInt(vestingAmountWei), BigInt(vestingTimestamp))
-                console.log('TST2 transferWithLock', transferTx.tx)
+                console.log("\t", "address:", data.address, "vestingAmountWei:", valueWei, "vestingTimestamp:", vestingTimestamp);
                 fileLog.writeln(util.format("\t%d/%d", i + 1, data.vestingCount));
-                fileLog.writeln(util.format("\tvestringDate=%s, vestingAmount=%d", toStringByFormatting(vestingDate), vestingAmount));
-                fileLog.writeln(util.format("\ttransferWithLock(%s, %s, %s)", data.address, vestingAmountWei, vestingTimestamp));
+                fileLog.writeln(util.format("\tvestringDate=%s, vestingAmount=%d", toStringByFormatting(vestingDate), valueEth));
+                fileLog.writeln(util.format("\ttransferWithLock(%s, %s, %s)", data.address, valueWei, vestingTimestamp));
+
+                const transferTx = await ptc.transferWithLock(data.address, BigInt(valueWei), BigInt(vestingTimestamp))
+                console.log("\t", 'TST2 transferWithLock', transferTx.tx)
                 fileLog.writeln(util.format("\ttransaction: %s", transferTx.tx));
             }
 
